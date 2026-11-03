@@ -1,0 +1,6 @@
+[
+  { "batch": "M550-2409", "sku": "MA-MGO550-500", "tested_value": "MGO 587 mg/kg", "lab": "Akkreditiertes Labor (Beispiel)", "test_date": "2026-09-12", "certificate_url": "https://example.com/zertifikate/M550-2409.pdf" },
+  { "batch": "M800-2407", "sku": "MA-MGO800-500", "tested_value": "MGO 842 mg/kg", "lab": "Akkreditiertes Labor (Beispiel)", "test_date": "2026-07-03", "certificate_url": "https://example.com/zertifikate/M800-2407.pdf" },
+  { "batch": "SK-2608-B", "sku": "NE-SKO-500", "tested_value": "Schadstoffanalyse unauffällig", "lab": "Unabhängiges Labor (Beispiel)", "test_date": "2026-08-20", "certificate_url": "https://example.com/zertifikate/SK-2608-B.pdf" },
+  { "batch": "SKK-2607", "sku": "NE-SKO-KAP-150", "tested_value": "Schadstoffanalyse unauffällig", "lab": "Unabhängiges Labor (Beispiel)", "test_date": "2026-07-15", "certificate_url": "https://example.com/zertifikate/SKK-2607.pdf" }
+]

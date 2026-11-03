@@ -1,0 +1,60 @@
+[
+  {
+    "order_number": "NE-20417",
+    "channel": "shopify",
+    "customer_email": "j.becker@example.com",
+    "customer_name": "Jana Becker",
+    "created_at": "2026-10-28",
+    "status": "shipped",
+    "carrier": "DHL",
+    "tracking_number": "00340434161234567890",
+    "items": [{ "sku": "NE-SKO-500", "qty": 2, "batch": "SK-2608-B" }]
+  },
+  {
+    "order_number": "MA-10388",
+    "channel": "shopify",
+    "customer_email": "t.hoffmann@example.com",
+    "customer_name": "Thomas Hoffmann",
+    "created_at": "2026-10-24",
+    "status": "delivered",
+    "carrier": "DHL",
+    "tracking_number": "00340434169876543210",
+    "items": [{ "sku": "MA-MGO550-500", "qty": 1, "batch": "M550-2409" }]
+  },
+  {
+    "order_number": "MA-10412",
+    "channel": "shopify",
+    "customer_email": "s.yilmaz@example.com",
+    "customer_name": "Selin Yilmaz",
+    "created_at": "2026-10-30",
+    "status": "delivered",
+    "carrier": "DHL",
+    "tracking_number": "00340434160011223344",
+    "items": [
+      { "sku": "MA-MGO800-500", "qty": 1, "batch": "M800-2407" },
+      { "sku": "MA-PROP-30", "qty": 1, "batch": "PR-2605" }
+    ]
+  },
+  {
+    "order_number": "302-8841123-5521904",
+    "channel": "amazon",
+    "customer_email": "k.weber@marketplace.example.com",
+    "customer_name": "Klaus Weber",
+    "created_at": "2026-10-29",
+    "status": "delivered",
+    "carrier": "DHL",
+    "tracking_number": "00340434165566778899",
+    "items": [{ "sku": "NE-SKO-KAP-150", "qty": 1, "batch": "SKK-2607" }]
+  },
+  {
+    "order_number": "NE-20433",
+    "channel": "shopify",
+    "customer_email": "m.schulz@example.com",
+    "customer_name": "Maria Schulz",
+    "created_at": "2026-11-01",
+    "status": "processing",
+    "carrier": null,
+    "tracking_number": null,
+    "items": [{ "sku": "NE-ASH-200", "qty": 1, "batch": null }]
+  }
+]

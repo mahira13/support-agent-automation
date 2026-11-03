@@ -1,0 +1,10 @@
+[
+  { "sku": "MA-MGO250-250", "brand": "maorika", "name": "Manuka Honig MGO 250+, 250 g", "type": "food", "usage_note": "Pur vom Löffel, im Tee (nicht zu heiß) oder im Joghurt. Nicht für Säuglinge unter 12 Monaten." },
+  { "sku": "MA-MGO550-500", "brand": "maorika", "name": "Manuka Honig MGO 550+, 500 g", "type": "food", "usage_note": "Pur vom Löffel, im Tee (nicht zu heiß) oder im Joghurt. Nicht für Säuglinge unter 12 Monaten." },
+  { "sku": "MA-MGO800-500", "brand": "maorika", "name": "Manuka Honig MGO 800+, 500 g", "type": "food", "usage_note": "Pur vom Löffel, im Tee (nicht zu heiß) oder im Joghurt. Nicht für Säuglinge unter 12 Monaten." },
+  { "sku": "MA-PROP-30", "brand": "maorika", "name": "Propolis Tinktur 20 %, 30 ml", "type": "food", "usage_note": "Verzehrempfehlung laut Etikett. Nicht bei bekannter Allergie gegen Bienenprodukte." },
+  { "sku": "MA-SALBE-100", "brand": "maorika", "name": "Bienengiftsalbe mit Manuka-Öl, 100 ml", "type": "cosmetic", "usage_note": "Nur äußerlich. Nicht bei Allergie gegen Bienenprodukte." },
+  { "sku": "NE-SKO-500", "brand": "nedura", "name": "BIO Schwarzkümmelöl ungefiltert, 500 ml", "type": "food_supplement", "usage_note": "Verzehrempfehlung laut Etikett, ca. 1 Teelöffel täglich." },
+  { "sku": "NE-SKO-KAP-150", "brand": "nedura", "name": "BIO Schwarzkümmelöl Kapseln, 150 Stück", "type": "food_supplement", "usage_note": "Verzehrempfehlung laut Etikett: 2 Kapseln täglich." },
+  { "sku": "NE-ASH-200", "brand": "nedura", "name": "BIO Ashwagandha Kapseln, 200 Stück", "type": "food_supplement", "usage_note": "Verzehrempfehlung laut Etikett. Für Schwangere und Stillende nicht empfohlen." }
+]

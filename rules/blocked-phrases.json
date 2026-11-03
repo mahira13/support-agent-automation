@@ -1,0 +1,10 @@
+[
+  { "id": "heilversprechen", "pattern": "\\b(heilt|heilen|heilung|geheilt|heilend)\\b", "reason": "Heilversprechen" },
+  { "id": "hilft-gegen", "pattern": "\\b(hilft|wirkt|schützt|hilfreich)\\b[^.!?]{0,40}\\b(gegen|bei)\\b[^.!?]{0,30}\\b(diabetes|krebs|bluthochdruck|ekzem|erkältung|husten|infektion\\w*|entzündung\\w*|krankheit\\w*|allergie\\w*)", "reason": "Wirkung gegen eine Krankheit" },
+  { "id": "behandeln", "pattern": "\\b(behandelt|behandeln|lindert|lindern|beugt\\s+\\w+\\s+vor|vorbeugen)\\b", "reason": "Behandlung/Linderung/Vorbeugung" },
+  { "id": "blutzucker", "pattern": "\\b(senkt|senken|reguliert|regulieren)\\b[^.!?]{0,30}\\b(blutzucker|blutdruck|cholesterin)", "reason": "Senkt Blutzucker/Blutdruck/Cholesterin" },
+  { "id": "immunsystem", "pattern": "\\b(stärkt|stärken|unterstützt|stimuliert)\\b[^.!?]{0,20}\\b(immunsystem|abwehrkräfte|immunabwehr)", "reason": "Immun-Claim ohne Zulassung" },
+  { "id": "antibakteriell", "pattern": "\\b(antibakteriell|antibiotisch|antiviral|entzündungshemmend|antimikrobiell)\\w*", "reason": "Pharmakologische Wirkung" },
+  { "id": "medikament", "pattern": "\\b(medikament\\w*|metformin|insulin|tabletten)\\b[^.!?]{0,40}\\b(weniger|reduzieren|absetzen|ersetzen|weglassen|verzichten)", "reason": "Rat zu Medikamenten" },
+  { "id": "medikament-2", "pattern": "\\b(weniger|reduzieren|absetzen|ersetzen|weglassen)\\b[^.!?]{0,40}\\b(medikament\\w*|metformin|insulin|tabletten)", "reason": "Rat zu Medikamenten" }
+]

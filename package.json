@@ -1,0 +1,30 @@
+{
+  "name": "maorika-nedura-support-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Prototype: KI-Support-Agent mit Compliance-Check für maorika & nedura (Beispieldaten)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "cli": "tsx scripts/run-cli.ts",
+    "precompute": "tsx scripts/run-cli.ts --save"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "next": "^15.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}
