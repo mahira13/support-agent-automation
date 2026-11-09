@@ -1,6 +1,7 @@
 // Step 1 (triage) and step 3 (draft reply).
 
 import { callStructured } from "./llm";
+import { loadSupportFaq } from "./rules";
 import {
   CATEGORIES,
   DraftSchema,
@@ -71,23 +72,34 @@ ${UNTRUSTED_NOTE}
 Schreibe einen Antwortentwurf auf Deutsch, in der Sie-Form, freundlich und kurz (max. ca. 120 Wörter).
 
 Harte Regeln:
-- Nutze NUR Fakten aus dem Abschnitt KONTEXT. Erfinde keine Sendungsnummern, Daten, Preise oder Links.
+- Nutze NUR Fakten aus dem Abschnitt KONTEXT und aus der FAQ unten. Erfinde keine Sendungsnummern, Daten, Preise oder Links.
 - Wenn eine Information fehlt, sag ehrlich, dass das Team sie prüft.
+- Versprich nie eine Handlung, die das System nicht ausführt: keine Anhänge oder PDFs schicken, keine Rechnung
+  ausstellen, kein Geld erstatten, nichts nachschicken. Gib stattdessen den Link oder die Information aus KONTEXT
+  oder FAQ. Wenn das nicht geht: Schreib, dass sich das Team meldet, und setze agent_wants_human auf true.
+- Schreib nur dann, dass das Team etwas prüft oder sich meldet, wenn agent_wants_human true ist. Bei
+  agent_wants_human false beantwortest du die Frage vollständig selbst, ohne solche Sätze.
 - Keine Heilversprechen, keine Wirkung gegen Krankheiten, kein Rat zu Medikamenten.
 - Bei Krankheit, Medikamenten, Schwangerschaft oder Kindern: auf Ärztin/Arzt oder Apotheke verweisen.
-- Honig ist nicht für Säuglinge unter 12 Monaten geeignet – das immer klar sagen, wenn es passt.
+- Nur wenn die Nachricht ein Baby, einen Säugling oder ein Kind unter 1 Jahr erwähnt: klar sagen, dass Honig
+  nicht für Säuglinge unter 12 Monaten geeignet ist. Sonst diesen Hinweis weglassen.
 - Versprich kein Geld (Erstattung, Gutschrift, Rabatt). Schreib stattdessen, dass sich das Team meldet.
 - Unterschrift: "Ihr Kundenservice von maorika & nedura".
-In facts_used listest du jeden Fakt, den du aus dem KONTEXT benutzt hast.
+In facts_used listest du jeden Fakt, den du aus KONTEXT oder FAQ benutzt hast.
 
 agent_wants_human – entscheide nach diesen Regeln:
-- true, wenn ein Fakt fehlt, den du für die Antwort brauchst (er steht nicht im KONTEXT).
+- true, wenn ein Fakt fehlt, den du für die Antwort brauchst (er steht weder im KONTEXT noch in der FAQ).
 - true, wenn die Kundin oder der Kunde etwas will, das nur ein Mensch entscheiden kann: Geld zurück,
   Gutschrift oder Rabatt, Ersatz oder Nachlieferung (z. B. ein fehlender Artikel soll nachgeschickt werden),
   eine Ausnahme von den Regeln, oder eine Beschwerde über Mitarbeitende.
 - true, wenn es um Gesundheit, Medikamente, Schwangerschaft, Kinder oder Allergien geht.
 - Sonst false. Beispiel: Eine normale Frage zum Bestellstatus, und Bestellung, Status und Sendungsnummer
-  stehen im KONTEXT → false.`,
+  stehen im KONTEXT → false.
+
+FAQ (Beispiel-Richtlinien des Teams):
+<<<FAQ>>>
+${loadSupportFaq()}
+<<<ENDE_FAQ>>>`,
     user: `TICKET:
 ${ticketText(ticket)}
 

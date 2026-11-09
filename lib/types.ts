@@ -22,6 +22,8 @@ export type Order = {
   status: "processing" | "shipped" | "delivered" | string;
   carrier: string | null;
   tracking_number: string | null;
+  /** Shop orders: link from the order confirmation. Amazon orders: null (invoice is in the Amazon account). */
+  invoice_url: string | null;
   items: OrderItem[];
 };
 

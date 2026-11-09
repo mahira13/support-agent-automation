@@ -39,3 +39,11 @@ export function loadRulesMarkdown(): string {
   cachedRules = fs.readFileSync(path.join(process.cwd(), "rules", "compliance-rules.md"), "utf8");
   return cachedRules;
 }
+
+let cachedFaq: string | null = null;
+/** Example support policies (rules/support-faq.md) for the draft prompt. In production: the team's Gorgias macros. */
+export function loadSupportFaq(): string {
+  if (cachedFaq) return cachedFaq;
+  cachedFaq = fs.readFileSync(path.join(process.cwd(), "rules", "support-faq.md"), "utf8");
+  return cachedFaq;
+}

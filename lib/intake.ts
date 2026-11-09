@@ -131,14 +131,32 @@ export async function beginIntake(input: IntakeInput): Promise<BeginResult> {
   return { ticket_id, ticket };
 }
 
-/** Slow part: run the agent, writing each step as it happens, then finish the ticket. */
+/**
+ * Writes one ticket's rows in order, without making the caller wait for each one.
+ * Each Sheet write takes ~2 s; awaiting them one by one before every AI call
+ * doubled the run time. The agent now goes on right away; the writes follow in
+ * the same order (each waits for the previous one), and continueIntake waits
+ * for the last write at the end. safeWrite never throws, so the chain never breaks.
+ */
+function writeQueue() {
+  let chain: Promise<void> = Promise.resolve();
+  return {
+    push(label: string, fn: () => Promise<void>) {
+      chain = chain.then(() => safeWrite(label, fn));
+    },
+    drain: () => chain,
+  };
+}
+
+/** Slow part: run the agent, queue each step write as it happens, then finish the ticket. */
 export async function continueIntake(ticket_id: string, ticket: Ticket): Promise<void> {
   const store = getStore();
+  const writes = writeQueue();
   try {
-    const result = await runAgent(ticket, async (step, state, label_de, detail) => {
-      await safeWrite("addStep", () => store.addStep(ticket_id, step, state, label_de, detail));
+    const result = await runAgent(ticket, (step, state, label_de, detail) => {
+      writes.push("addStep", () => store.addStep(ticket_id, step, state, label_de, detail));
     });
-    await safeWrite("finishTicket", () =>
+    writes.push("finishTicket", () =>
       store.finishTicket(ticket_id, {
         status: result.status,
         route_to: result.route_to,
@@ -147,6 +165,7 @@ export async function continueIntake(ticket_id: string, ticket: Ticket): Promise
     );
   } catch (err) {
     console.error(`[intake] Agent-Fehler für ${ticket_id}:`, err instanceof Error ? err.message : err);
-    await safeWrite("finishTicket", () => store.finishTicket(ticket_id, { status: "blocked", route_to: "support", final_reply: "" }));
+    writes.push("finishTicket", () => store.finishTicket(ticket_id, { status: "blocked", route_to: "support", final_reply: "" }));
   }
+  await writes.drain();
 }

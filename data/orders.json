@@ -8,6 +8,7 @@
     "status": "shipped",
     "carrier": "DHL",
     "tracking_number": "00340434161234567890",
+    "invoice_url": "https://example.com/rechnungen/NE-20417.pdf",
     "items": [{ "sku": "NE-SKO-500", "qty": 2, "batch": "SK-2608-B" }]
   },
   {
@@ -19,6 +20,7 @@
     "status": "delivered",
     "carrier": "DHL",
     "tracking_number": "00340434169876543210",
+    "invoice_url": "https://example.com/rechnungen/MA-10388.pdf",
     "items": [{ "sku": "MA-MGO550-500", "qty": 1, "batch": "M550-2409" }]
   },
   {
@@ -30,6 +32,7 @@
     "status": "delivered",
     "carrier": "DHL",
     "tracking_number": "00340434160011223344",
+    "invoice_url": "https://example.com/rechnungen/MA-10412.pdf",
     "items": [
       { "sku": "MA-MGO800-500", "qty": 1, "batch": "M800-2407" },
       { "sku": "MA-PROP-30", "qty": 1, "batch": "PR-2605" }
@@ -44,6 +47,7 @@
     "status": "delivered",
     "carrier": "DHL",
     "tracking_number": "00340434165566778899",
+    "invoice_url": null,
     "items": [{ "sku": "NE-SKO-KAP-150", "qty": 1, "batch": "SKK-2607" }]
   },
   {
@@ -55,6 +59,7 @@
     "status": "processing",
     "carrier": null,
     "tracking_number": null,
+    "invoice_url": "https://example.com/rechnungen/NE-20433.pdf",
     "items": [{ "sku": "NE-ASH-200", "qty": 1, "batch": null }]
   }
 ]
