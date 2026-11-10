@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AgentResult, ComplianceResult, Context, Draft, FinalStatus, RuleHit, Ticket, Triage } from "@/lib/types";
 import type { StoredStep, StoredTicket } from "@/lib/store";
+import { findNewTickets, newTicketAction, type Selection } from "@/lib/new-tickets";
 
 type ExampleEntry = { ticket: Ticket; result: AgentResult | null };
 
@@ -18,7 +19,6 @@ type InboxData = {
   max_body_chars: number;
 };
 
-type Selection = { kind: "example" | "live"; id: string } | { kind: "words" } | { kind: "write" };
 
 const STATUS_TEXT: Record<FinalStatus, { icon: string; title: string; text: string }> = {
   ready_to_send: { icon: "✅", title: "Sendefertig", text: "Die Antwort kann so raus (in Produktion: Entwurf in Gorgias, ein Klick zum Senden)." },
@@ -82,8 +82,8 @@ type ResultView = {
   running?: { step: string; label: string };
 };
 
-const IDLE_MS = 20_000; // auto-open a new live ticket only if the visitor did nothing for this long
 const TOAST_MS = 6_000;
+const HIGHLIGHT_MS = 4_000;
 
 function runningStep(steps: StoredStep[]): { step: string; label: string } | undefined {
   const last = steps[steps.length - 1];
@@ -347,10 +347,10 @@ export default function Page() {
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const seenIds = useRef<Set<string> | null>(null);
 
-  // New-ticket notice: toast, auto-open when idle, tab title when the tab is in the background.
+  // New-ticket notice: auto-open or toast, highlight in the list, tab title while in the background.
   const [toast, setToast] = useState<string | null>(null); // ticket_id the toast points to
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const lastInteraction = useRef(0); // 0 = visitor has not clicked or typed yet
+  const awaySincePoll = useRef(false); // tab hidden or window unfocused at any point since the previous poll
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
   const unseenWhileHidden = useRef(0);
@@ -358,36 +358,40 @@ export default function Page() {
   const resultRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const mark = () => { lastInteraction.current = Date.now(); };
     baseTitle.current = document.title;
+    const onAway = () => { awaySincePoll.current = true; };
     const onVisible = () => {
-      if (document.visibilityState === "visible" && unseenWhileHidden.current) {
+      if (document.visibilityState === "hidden") return onAway();
+      if (unseenWhileHidden.current) {
         unseenWhileHidden.current = 0;
         document.title = baseTitle.current;
       }
     };
-    document.addEventListener("pointerdown", mark, true);
-    document.addEventListener("keydown", mark, true);
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("blur", onAway);
     return () => {
-      document.removeEventListener("pointerdown", mark, true);
-      document.removeEventListener("keydown", mark, true);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("blur", onAway);
       clearTimeout(toastTimer.current);
     };
   }, []);
 
-  function announce(t: StoredTicket) {
-    const sel = selectionRef.current;
-    if (sel.kind === "live" && sel.id === t.ticket_id) return; // own message from the form, already open
-    if (Date.now() - lastInteraction.current >= IDLE_MS) setSelection({ kind: "live", id: t.ticket_id });
-    setToast(t.ticket_id);
-    clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), TOAST_MS);
+  /** `wasAway`: tab hidden or window unfocused at some point since the previous poll. */
+  function announce(t: StoredTicket, count: number, wasAway: boolean) {
     if (document.visibilityState === "hidden") {
-      unseenWhileHidden.current += 1;
+      unseenWhileHidden.current += count;
       document.title = `(${unseenWhileHidden.current}) Neue E-Mail – Support-Agent`;
     }
+    const action = newTicketAction(t.ticket_id, selectionRef.current, wasAway);
+    if (action.kind === "none") return;
+    if (action.kind === "open") {
+      setSelection({ kind: "live", id: action.id });
+      setToast(null);
+      return;
+    }
+    setToast(action.id);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), TOAST_MS);
   }
 
   function openToast() {
@@ -402,19 +406,23 @@ export default function Page() {
     try {
       const res = await fetch("/api/inbox");
       const json: InboxData = await res.json();
-      if (seenIds.current) {
-        const freshlyArrived = json.live.map((t) => t.ticket_id).filter((id) => !seenIds.current!.has(id));
+      const wasAway = awaySincePoll.current || document.visibilityState === "hidden" || !document.hasFocus();
+      awaySincePoll.current = false;
+      // "New" = an ID that wasn't in the previous successful result. The first load only records what is there.
+      // A failed live read (live_error, empty list) must not reset this, or every ticket would look new afterwards.
+      if (!json.live_error) {
+        const freshlyArrived = findNewTickets(seenIds.current, json.live.map((t) => t.ticket_id));
         if (freshlyArrived.length) {
           setNewIds((prev) => new Set([...prev, ...freshlyArrived]));
           for (const id of freshlyArrived) {
-            setTimeout(() => setNewIds((prev) => { const next = new Set(prev); next.delete(id); return next; }), 4000);
+            setTimeout(() => setNewIds((prev) => { const next = new Set(prev); next.delete(id); return next; }), HIGHLIGHT_MS);
           }
-          // Newest first in the list, so the first processing one is the newest the agent works on.
-          const newest = json.live.find((t) => freshlyArrived.includes(t.ticket_id) && t.status === "processing");
-          if (newest) announce(newest);
+          // The list is newest first, so this is the newest of the new tickets.
+          const newest = json.live.find((t) => freshlyArrived.includes(t.ticket_id))!;
+          announce(newest, freshlyArrived.length, wasAway);
         }
+        seenIds.current = new Set(json.live.map((t) => t.ticket_id));
       }
-      seenIds.current = new Set(json.live.map((t) => t.ticket_id));
       setData(json);
       setError(null);
     } catch {
@@ -488,9 +496,7 @@ export default function Page() {
     <main className="wrap">
       {toast && (
         <button className="toast" role="status" onClick={openToast}>
-          <span className="spinner" />
-          Neue E-Mail eingegangen – der Agent arbeitet …
-          <span className="toast-open">Ansehen</span>
+          Neue E-Mail eingegangen – <span className="toast-open">ansehen</span>
         </button>
       )}
       <header className="top">

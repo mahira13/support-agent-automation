@@ -15,8 +15,9 @@ auf Deutsch und prüft sie auf **Heilversprechen**, bevor ein Mensch sie sieht.
 1. Öffnen Sie die [Demo-Seite](https://support-agent-automation.vercel.app).
 2. Schreiben Sie eine E-Mail an **maorika.demo.support@gmail.com**, zum Beispiel:
    *„Hilft Ihr Schwarzkümmelöl gegen Diabetes? Bestellung NE-20417“*
-3. Nach ca. 1 Minute erscheint die E-Mail auf der Seite. Die Seite öffnet sie automatisch (wenn Sie gerade nichts anklicken), und Sie sehen, wie der
-   Agent Schritt für Schritt arbeitet.
+3. Nach ca. 1 Minute erscheint die E-Mail auf der Seite. Waren Sie in der Zwischenzeit in einem anderen Tab oder
+   Fenster (z. B. beim Schreiben der E-Mail), öffnet die Seite sie automatisch. Sonst erscheint oben ein Hinweis
+   zum Anklicken. Sie sehen, wie der Agent Schritt für Schritt arbeitet.
 
 - Ihre Nachricht ist auf der Seite **für alle sichtbar**. Ihre Adresse wird gekürzt (z. B. `j***@firma.de`).
   Die volle Adresse wird nirgends gespeichert. Bitte schreiben Sie keine persönlichen Daten.
@@ -92,8 +93,8 @@ Das Textfeld auf der Seite (`/api/submit`) nutzt **dieselbe** Funktion wie der W
 ## Was die Demo zeigt
 
 - **Live:** Ihre E-Mail oder Ihre Nachricht aus dem Textfeld, mit Zeitleiste (Spinner, solange ein Schritt läuft).
-  Neue Tickets stehen oben. Ein kurzer Hinweis oben zeigt neue E-Mails an. Wer gerade nichts anklickt, sieht das
-  neue Ticket automatisch.
+  Neue Tickets stehen oben und leuchten kurz auf. Wer in einem anderen Tab war, sieht das neue Ticket automatisch;
+  sonst erscheint oben ein kurzer Hinweis. Im Hintergrund zeigt der Tab-Titel „(1) Neue E-Mail“.
 - **Beispiele:** 13 Beispiel-Tickets, darunter ein Versuch, den Agenten zu manipulieren (T-1013). Zu jedem
   Ticket gibt es das gespeicherte Ergebnis eines echten Durchlaufs.
 - **Wortliste live testen:** Ebene 1 des Compliance-Checks, ohne KI, sofort und kostenlos.
@@ -159,6 +160,7 @@ lib/llm.ts                    Ein Zugang für alle KI-Anbieter (OpenAI, Claude, 
 lib/store.ts                  Google Sheet (SheetStore) + Arbeitsspeicher (MemoryStore)
 lib/privacy.ts                Adresse maskieren, Absender-Hash für Limits
 lib/background.ts             Hülle um after(), damit die Routen ohne Server testbar sind
+lib/new-tickets.ts            Seite: Was ist neu, und wird es geöffnet oder nur angezeigt?
 apps-script/Code.gs           Apps-Script-Web-App: schreibt und liest das Google Sheet
 apps-script/GmailForwarder.gs Apps Script im Demo-Gmail-Konto: schickt neue E-Mails an den Webhook
 rules/                        Compliance-Regeln + Support-FAQ (Beispiel-Richtlinien; in Produktion: die Gorgias-Makros des Teams)
