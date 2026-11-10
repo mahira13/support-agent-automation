@@ -5,7 +5,8 @@ minute in that Gmail account and posts each new email to the app's webhook `/api
 right away, then runs the agent and writes every step to a Google Sheet through `apps-script/Code.gs`. The demo
 page polls `/api/inbox` every 3 seconds and shows the steps live. No reply emails are ever sent.
 
-Placeholders used below: `DEINE-APP.vercel.app` (your Vercel domain), `DEMO-EMAIL@gmail.com` (the demo Gmail address).
+Values of the live demo used below: `support-agent-automation.vercel.app` (Vercel domain) and
+`maorika.demo.support@gmail.com` (demo Gmail address). If you set up your own copy, use your own domain and address.
 
 ## 1. OpenAI API key with a spend limit
 1. platform.openai.com/api-keys → **Create new secret key**. Copy it once, you can't see it again.
@@ -31,7 +32,7 @@ Placeholders used below: `DEINE-APP.vercel.app` (your Vercel domain), `DEMO-EMAI
 7. Optional: **Share** the Sheet itself (not the script) as "Anyone with the link: Viewer" → `SHEET_PUBLIC_URL`.
 
 ## 3. Demo Gmail account
-1. Create a new Gmail account just for the demo (e.g. `DEMO-EMAIL@gmail.com`). Don't use your private account:
+1. Create a new Gmail account just for the demo (here: `maorika.demo.support@gmail.com`). Don't use your private account:
    the forwarder sends **every** unread inbox email to the webhook, and the content is public on the page.
 2. **Before** setting up the forwarder, open the inbox and **mark all welcome emails as read** (select all → Mark as
    read). Otherwise Google's welcome emails become the first live tickets.
@@ -44,17 +45,20 @@ Generate the webhook token: `openssl rand -hex 24` → `INBOUND_WEBHOOK_TOKEN`.
 | `LLM_PROVIDER` | `openai` |
 | `OPENAI_API_KEY` | key from step 1 |
 | `OPENAI_MODEL` | e.g. `gpt-5-mini` |
+| `OPENAI_REASONING_EFFORT` | `low` (default; `minimal` is faster). Only sent for reasoning models (`gpt-5*`, `o*`) |
 | `ENABLE_LIVE` | `true` (anything else: tickets are stored, but no AI runs) |
 | `SHEET_API_URL` | web app URL from step 2 |
 | `SHEET_API_SECRET` | the `SECRET` script property from step 2 |
-| `SHEET_PUBLIC_URL` | optional, view link of the Sheet |
+| `SHEET_PUBLIC_URL` | optional, view link of the Sheet (shown on the page as "Alle Live-Tickets im Google Sheet ansehen (nur lesen)") |
 | `INBOUND_WEBHOOK_TOKEN` | random string from above |
-| `INBOUND_EMAIL_ADDRESS` | `DEMO-EMAIL@gmail.com` |
+| `INBOUND_EMAIL_ADDRESS` | `maorika.demo.support@gmail.com` (shown in the banner on the page) |
 | `GITHUB_URL` | optional, link to the repo (shown on the page) |
 | `LIVE_DAILY_LIMIT` | `60` (default) |
 | `LIVE_PER_SENDER_HOUR` | `5` (default) |
+| `LIVE_BODY_MAX_CHARS` | optional, `2000` (default): characters kept from a message |
 
-Other AI providers (`ANTHROPIC_*`, `GEMINI_*`, `OLLAMA_*`) are optional, see `.env.example`.
+Other AI providers (`ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_BASE_URL`,
+`OLLAMA_URL`, `OLLAMA_MODEL`) and `OPENAI_BASE_URL` are optional, see `.env.example`.
 Put the same values into `.env.local` if you want to test against the real Sheet locally.
 
 ## 5. GitHub
@@ -63,29 +67,30 @@ Put the same values into `.env.local` if you want to test against the real Sheet
    git grep -nE "sk-[A-Za-z0-9]|AKfy[c]|-----BEGI[N]" || echo "no secrets"
    git ls-files | grep -i env        # must show only .env.example
    ```
-2. Push to `main`. The folder `private/` and `.env*` files are in `.gitignore`.
+2. Push to `main` of https://github.com/mahira13/support-agent-automation. The folder `private/` and `.env*` files
+   are in `.gitignore`.
 
 ## 6. Vercel
 1. vercel.com → **Add New → Project** → import the GitHub repo. Framework: Next.js (auto-detected).
 2. **Settings → Environment Variables**: add all variables from step 4. Tick **Production** and **Preview**.
 3. Deploy. Vercel deploys `main` to production. After changing a variable, **redeploy** (Deployments → ⋯ → Redeploy),
    because variables are only read at deploy time.
-4. Open `https://DEINE-APP.vercel.app` — the banner should show the demo address.
+4. Open `https://support-agent-automation.vercel.app` — the banner should show the demo address.
 
 ## 7. `GmailForwarder.gs` in the demo Gmail account
 1. Logged in as the demo Gmail account: script.google.com → **New project** → paste all of
    `apps-script/GmailForwarder.gs`.
 2. **Project Settings → Script Properties** → add `WEBHOOK_URL` =
-   `https://DEINE-APP.vercel.app/api/inbound-email?token=<INBOUND_WEBHOOK_TOKEN>`
+   `https://support-agent-automation.vercel.app/api/inbound-email?token=<INBOUND_WEBHOOK_TOKEN>`
 3. Select the function `forwardNewEmails` → **Run** once by hand → allow the permissions (Gmail + external requests).
 4. **Triggers** (clock icon) → **Add Trigger** → function `forwardNewEmails` → event source **Time-driven** →
    **Minutes timer** → **Every minute** → Save.
 
 ## 8. End-to-end test
-- [ ] Without email: `./scripts/send-test-email-webhook.sh https://DEINE-APP.vercel.app <token>` → `HTTP 200`
+- [ ] Without email: `./scripts/send-test-email-webhook.sh https://support-agent-automation.vercel.app <token>` → `HTTP 200`
       and a `ticket_id`. The ticket appears on the page under "Live" and in the Sheet.
 - [ ] Same script with a wrong token → `HTTP 401`.
-- [ ] From another email account, send an email to `DEMO-EMAIL@gmail.com`. Within about 1 minute it appears under
+- [ ] From another email account, send an email to `maorika.demo.support@gmail.com`. Within about 1 minute it appears under
       "Live", the steps tick off one by one, and a final status appears. In Gmail the email is now marked as read.
 - [ ] Type a message in "Eigene Nachricht senden" → same flow.
 - [ ] Open the page on a phone (390 px width) in light and dark mode: no horizontal scroll.

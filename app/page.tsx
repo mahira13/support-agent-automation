@@ -78,7 +78,17 @@ type ResultView = {
   metaLine: string;
   /** Set when the ticket never ran the agent at all (limit, live mode off, …). */
   notProcessedLabel?: string;
+  /** Live only: the step that is running right now and its label. */
+  running?: { step: string; label: string };
 };
+
+const IDLE_MS = 20_000; // auto-open a new live ticket only if the visitor did nothing for this long
+const TOAST_MS = 6_000;
+
+function runningStep(steps: StoredStep[]): { step: string; label: string } | undefined {
+  const last = steps[steps.length - 1];
+  return last?.state === "running" ? { step: last.step, label: last.label_de } : undefined;
+}
 
 function exampleToView(ticket: Ticket, result: AgentResult): ResultView {
   return {
@@ -122,6 +132,7 @@ function liveToView(t: StoredTicket): ResultView {
     route_to: (t.route_to as AgentResult["route_to"]) || undefined,
     metaLine: triage ? `Live · ${(ms / 1000).toFixed(1)} s` : "Live",
     notProcessedLabel,
+    running: t.status === "processing" ? runningStep(t.steps) : undefined,
   };
 }
 
@@ -170,6 +181,13 @@ function TicketPreview({ view }: { view: ResultView }) {
   );
 }
 
+function StepPending({ view, step, idle }: { view: ResultView; step: string; idle: string }) {
+  if (view.running?.step === step) {
+    return <p className="step-running"><span className="spinner" />{view.running.label}</p>;
+  }
+  return <p className="small">{view.status === "processing" ? "wartet …" : idle}</p>;
+}
+
 function ResultPanels({ view }: { view: ResultView }) {
   if (view.notProcessedLabel) {
     return (
@@ -178,27 +196,29 @@ function ResultPanels({ view }: { view: ResultView }) {
       </div>
     );
   }
-  if (view.status === "processing" || !view.triage) {
-    return (
-      <div className="panel empty" style={{ marginTop: 12 }}>
-        <span className="spinner" />
-        Der Agent arbeitet noch …
-      </div>
-    );
-  }
   const r = view;
-  const status = STATUS_TEXT[r.status as FinalStatus];
+  const status = r.status === "processing" ? null : STATUS_TEXT[r.status];
   return (
     <>
-      <div className={`status ${r.status}`}>
-        <span className="icon">{status.icon}</span>
-        <div>
-          <strong>{status.title}</strong> {r.route_to && <>→ {ROUTE_TEXT[r.route_to]}</>}
-          <div className="small">{status.text}</div>
-          {r.status_reasons.length > 0 && <ul>{r.status_reasons.map((x) => <li key={x}>{x}</li>)}</ul>}
-          <div className="small" style={{ marginTop: 6 }}>{r.metaLine}</div>
+      {status ? (
+        <div className={`status ${r.status}`}>
+          <span className="icon">{status.icon}</span>
+          <div>
+            <strong>{status.title}</strong> {r.route_to && <>→ {ROUTE_TEXT[r.route_to]}</>}
+            <div className="small">{status.text}</div>
+            {r.status_reasons.length > 0 && <ul>{r.status_reasons.map((x) => <li key={x}>{x}</li>)}</ul>}
+            <div className="small" style={{ marginTop: 6 }}>{r.metaLine}</div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="status processing" aria-live="polite">
+          <span className="spinner" />
+          <div>
+            <strong>Der Agent arbeitet …</strong>
+            <div className="small">{r.running?.label ?? "Nächster Schritt startet gleich."}</div>
+          </div>
+        </div>
+      )}
 
       <div className="steps">
         <div className="panel step">
@@ -206,19 +226,23 @@ function ResultPanels({ view }: { view: ResultView }) {
             <h4><span className="num">1</span>Einordnung</h4>
             <span className="who">KI</span>
           </div>
+          {r.triage ? (
           <dl className="kv">
-            <dt>Kategorie</dt><dd>{r.triage!.category}</dd>
-            <dt>Marke</dt><dd>{r.triage!.brand}</dd>
-            <dt>Stimmung</dt><dd>{r.triage!.sentiment}</dd>
+            <dt>Kategorie</dt><dd>{r.triage.category}</dd>
+            <dt>Marke</dt><dd>{r.triage.brand}</dd>
+            <dt>Stimmung</dt><dd>{r.triage.sentiment}</dd>
             <dt>Risiken</dt>
             <dd>
-              {r.triage!.risk_flags.length
-                ? r.triage!.risk_flags.map((f) => <span key={f} className="tag risk">{f}</span>)
+              {r.triage.risk_flags.length
+                ? r.triage.risk_flags.map((f) => <span key={f} className="tag risk">{f}</span>)
                 : "keine"}
             </dd>
-            <dt>Zusammenfassung</dt><dd>{r.triage!.summary_de}</dd>
-            <dt>Sicherheit</dt><dd>{Math.round(r.triage!.confidence * 100)} %</dd>
+            <dt>Zusammenfassung</dt><dd>{r.triage.summary_de}</dd>
+            <dt>Sicherheit</dt><dd>{Math.round(r.triage.confidence * 100)} %</dd>
           </dl>
+          ) : (
+            <StepPending view={r} step="triage" idle="keine Einordnung" />
+          )}
         </div>
 
         <div className="panel step">
@@ -247,7 +271,7 @@ function ResultPanels({ view }: { view: ResultView }) {
               </dd>
             </dl>
           ) : (
-            <p className="small">noch keine Daten</p>
+            <StepPending view={r} step="context" idle="noch keine Daten" />
           )}
         </div>
 
@@ -262,7 +286,7 @@ function ResultPanels({ view }: { view: ResultView }) {
               {r.draft.note_for_team && <p className="small">Notiz fürs Team: {r.draft.note_for_team}</p>}
             </>
           ) : (
-            <p className="small">noch kein Entwurf</p>
+            <StepPending view={r} step="draft" idle="noch kein Entwurf" />
           )}
         </div>
 
@@ -295,7 +319,7 @@ function ResultPanels({ view }: { view: ResultView }) {
               <div className="reply">{r.compliance.final_reply_de || "— keine Antwort, Ticket geht an das Team —"}</div>
             </>
           ) : (
-            <p className="small">noch keine Prüfung</p>
+            <StepPending view={r} step="compliance" idle="noch keine Prüfung" />
           )}
         </div>
       </div>
@@ -323,6 +347,57 @@ export default function Page() {
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const seenIds = useRef<Set<string> | null>(null);
 
+  // New-ticket notice: toast, auto-open when idle, tab title when the tab is in the background.
+  const [toast, setToast] = useState<string | null>(null); // ticket_id the toast points to
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastInteraction = useRef(0); // 0 = visitor has not clicked or typed yet
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+  const unseenWhileHidden = useRef(0);
+  const baseTitle = useRef("");
+  const resultRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const mark = () => { lastInteraction.current = Date.now(); };
+    baseTitle.current = document.title;
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && unseenWhileHidden.current) {
+        unseenWhileHidden.current = 0;
+        document.title = baseTitle.current;
+      }
+    };
+    document.addEventListener("pointerdown", mark, true);
+    document.addEventListener("keydown", mark, true);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      document.removeEventListener("pointerdown", mark, true);
+      document.removeEventListener("keydown", mark, true);
+      document.removeEventListener("visibilitychange", onVisible);
+      clearTimeout(toastTimer.current);
+    };
+  }, []);
+
+  function announce(t: StoredTicket) {
+    const sel = selectionRef.current;
+    if (sel.kind === "live" && sel.id === t.ticket_id) return; // own message from the form, already open
+    if (Date.now() - lastInteraction.current >= IDLE_MS) setSelection({ kind: "live", id: t.ticket_id });
+    setToast(t.ticket_id);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), TOAST_MS);
+    if (document.visibilityState === "hidden") {
+      unseenWhileHidden.current += 1;
+      document.title = `(${unseenWhileHidden.current}) Neue E-Mail – Support-Agent`;
+    }
+  }
+
+  function openToast() {
+    if (toast) setSelection({ kind: "live", id: toast });
+    setToast(null);
+    clearTimeout(toastTimer.current);
+    // One column on small screens: the ticket view sits below the list, so jump there.
+    if (window.matchMedia("(max-width: 860px)").matches) resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   async function poll() {
     try {
       const res = await fetch("/api/inbox");
@@ -334,6 +409,9 @@ export default function Page() {
           for (const id of freshlyArrived) {
             setTimeout(() => setNewIds((prev) => { const next = new Set(prev); next.delete(id); return next; }), 4000);
           }
+          // Newest first in the list, so the first processing one is the newest the agent works on.
+          const newest = json.live.find((t) => freshlyArrived.includes(t.ticket_id) && t.status === "processing");
+          if (newest) announce(newest);
         }
       }
       seenIds.current = new Set(json.live.map((t) => t.ticket_id));
@@ -408,6 +486,13 @@ export default function Page() {
 
   return (
     <main className="wrap">
+      {toast && (
+        <button className="toast" role="status" onClick={openToast}>
+          <span className="spinner" />
+          Neue E-Mail eingegangen – der Agent arbeitet …
+          <span className="toast-open">Ansehen</span>
+        </button>
+      )}
       <header className="top">
         <div>
           <h1>Support-Agent mit Compliance-Check</h1>
@@ -499,7 +584,7 @@ export default function Page() {
           </ul>
         </aside>
 
-        <section>
+        <section ref={resultRef}>
           <div className="panel">
             {selection.kind === "words" ? (
               <div className="custom">
@@ -592,7 +677,7 @@ export default function Page() {
           Die Entscheidung „senden oder Mensch“ ist eine feste Regel im Code, nicht im Prompt.
           Die Compliance-Regeln stehen in einer Textdatei, die das Team ohne Programmierung ändern kann.
           {data.sheet_public_url && (
-            <> <a href={data.sheet_public_url} target="_blank" rel="noreferrer">Alle Live-Tickets im Google Sheet ansehen</a>.</>
+            <> <a href={data.sheet_public_url} target="_blank" rel="noreferrer">Alle Live-Tickets im Google Sheet ansehen (nur lesen)</a>.</>
           )}
           {data.github_url && (
             <> <a href={data.github_url} target="_blank" rel="noreferrer">Code auf GitHub</a>.</>

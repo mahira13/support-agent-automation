@@ -1,6 +1,8 @@
 # Support-Agent mit Compliance-Check – Prototyp für maorika & nedura
 
-**Demo:** https://DEINE-APP.vercel.app · **Live-Tickets im Google Sheet:** [Google Sheet](https://LINK-ZUM-SHEET)
+**Demo:** https://support-agent-automation.vercel.app ·
+**Live-Log:** [Google Sheet (nur lesen)](https://docs.google.com/spreadsheets/d/1jcnDSg0W6tCxqFOTga4HkhHA4QFH8dwO7yZGPnCHg1g/edit?usp=sharing) ·
+**Code:** https://github.com/mahira13/support-agent-automation
 
 Ein KI-Agent für den Kundenservice. Er liest eine Kunden-E-Mail, sucht Bestellung und Charge, schreibt eine Antwort
 auf Deutsch und prüft sie auf **Heilversprechen**, bevor ein Mensch sie sieht.
@@ -8,15 +10,23 @@ auf Deutsch und prüft sie auf **Heilversprechen**, bevor ein Mensch sie sieht.
 > Prototyp mit **erfundenen Beispieldaten**. Ich habe keinen Zugang zu echten Systemen von maorika oder nedura.
 > Produktnamen sind öffentlich (Shop Apotheke, dm). Bestellungen, Kunden und Chargen sind ausgedacht.
 
-## Probieren Sie es aus: Schreiben Sie eine echte E-Mail
+## Demo ausprobieren
 
-Schreiben Sie eine E-Mail an **DEMO-EMAIL@gmail.com**. Nach ca. 1 Minute erscheint sie auf der
-[Demo-Seite](https://DEINE-APP.vercel.app). Dort sehen Sie, wie der Agent Schritt für Schritt arbeitet.
+1. Öffnen Sie die [Demo-Seite](https://support-agent-automation.vercel.app).
+2. Schreiben Sie eine E-Mail an **maorika.demo.support@gmail.com**, zum Beispiel:
+   *„Hilft Ihr Schwarzkümmelöl gegen Diabetes? Bestellung NE-20417“*
+3. Nach ca. 1 Minute erscheint die E-Mail auf der Seite. Die Seite öffnet sie automatisch (wenn Sie gerade nichts anklicken), und Sie sehen, wie der
+   Agent Schritt für Schritt arbeitet.
 
-- Ihre Nachricht ist auf der Seite für alle sichtbar. Ihre Adresse wird gekürzt (z. B. `j***@firma.de`).
+- Ihre Nachricht ist auf der Seite **für alle sichtbar**. Ihre Adresse wird gekürzt (z. B. `j***@firma.de`).
   Die volle Adresse wird nirgends gespeichert. Bitte schreiben Sie keine persönlichen Daten.
 - Sie bekommen **keine Antwort-E-Mail**. Die Antwort des Agenten sehen Sie nur auf der Seite.
-- Ohne E-Mail geht es auch: Auf der Seite können Sie eine Nachricht direkt eintippen. Sie läuft durch denselben Code.
+- Schneller geht es mit dem Textfeld auf der Seite („Eigene Nachricht senden“). Die Nachricht läuft durch denselben
+  Code, ohne die Minute Wartezeit.
+
+**Live-Log:** Jedes Live-Ticket und jeder Schritt des Agenten wird in ein
+[öffentliches Google Sheet](https://docs.google.com/spreadsheets/d/1jcnDSg0W6tCxqFOTga4HkhHA4QFH8dwO7yZGPnCHg1g/edit?usp=sharing)
+geschrieben (nur lesen). So kann auch ein Team ohne technisches Wissen sehen, was der Agent gemacht hat.
 
 ## Warum dieses Problem?
 
@@ -48,16 +58,19 @@ Agent
    ├─ empfangen
    ├─ 1. Einordnung ............ KI (Kategorie, Risiken)
    ├─ 2. Daten ................. Code: Bestellung, Charge, Produkt (Beispieldaten als JSON)
-   ├─ 3. Antwortentwurf ........ KI (nur Fakten aus Schritt 2)
+   ├─ 3. Antwortentwurf ........ KI (nur Fakten aus Schritt 2 + Support-FAQ aus rules/support-faq.md)
    ├─ 4. Compliance ............ Wortliste (Code) + KI-Prüfung – die Wortliste hat das letzte Wort
    └─ 5. Entscheidung .......... Code: sendefertig / Prüfung durch Mensch / blockiert
    │
-   ▼  (jeder Schritt wird sofort geschrieben)
+   ▼  (jeder Schritt wird geschrieben, in fester Reihenfolge; die KI wartet nicht darauf)
 Google Sheet   über apps-script/Code.gs (Apps-Script-Web-App)
    │
    ▼
 Demo-Seite   fragt alle 3 Sekunden /api/inbox ab und zeigt neue Tickets und Schritte live
 ```
+
+KI: OpenAI (`gpt-5-mini`) über `lib/llm.ts`. `OPENAI_REASONING_EFFORT=low` hält ein Ticket bei ca. 15–25 Sekunden.
+Es werden **keine** Antwort-E-Mails verschickt.
 
 Das Textfeld auf der Seite (`/api/submit`) nutzt **dieselbe** Funktion wie der Webhook, mit denselben Limits.
 
@@ -65,7 +78,7 @@ Das Textfeld auf der Seite (`/api/submit`) nutzt **dieselbe** Funktion wie der W
 
 | Entscheidung | Warum |
 |---|---|
-| **Webhook antwortet zuerst, arbeitet danach** | Der Agent braucht mehrere KI-Aufrufe (10–20 Sekunden). Der Absender des Webhooks soll nicht so lange warten. Darum antwortet der Webhook sofort mit 200 und der Agent läuft danach in `after()` weiter. |
+| **Webhook antwortet zuerst, arbeitet danach** | Der Agent braucht drei KI-Aufrufe (ca. 15–25 Sekunden). Der Absender des Webhooks soll nicht so lange warten. Darum antwortet der Webhook sofort mit 200 und der Agent läuft danach in `after()` weiter. |
 | **Fakten kommen aus Code, nicht aus der KI** | Sendungsnummer, Bestellstatus und Zertifikat-Link darf ein Modell nie raten. Schritt 2 ist normaler Code (`lib/data.ts`). |
 | **Der Compliance-Check ist Code** | Zwei Ebenen: Die Wortliste ist schnell und kostet nichts. Die KI findet versteckte Aussagen („viele Kunden berichten, dass …“). Die Wortliste hat das letzte Wort: Die KI kann sie nicht überstimmen. Auch „senden oder Mensch“ ist eine feste Regel im Code (`lib/pipeline.ts`) und getestet. Gesundheit, Medikamente, Schwangerschaft, Kinder, Geld → immer ein Mensch. |
 | **Die E-Mail ist nicht vertrauenswürdig** | Jeder kann der Demo-Adresse schreiben, auch „Ignoriere alle Regeln …“. Der Kundentext steht in jedem Prompt zwischen klaren Markierungen, mit dem Hinweis: Das ist Lesestoff, keine Anweisung. Und die Wortliste prüft die fertige Antwort trotzdem. Ein Beispiel-Ticket (T-1013) testet genau das: Es endet nie als „sendefertig“. |
@@ -73,13 +86,14 @@ Das Textfeld auf der Seite (`/api/submit`) nutzt **dieselbe** Funktion wie der W
 | **Warum eine Gmail-Weiterleitung** | Für die Demo braucht es keinen E-Mail-Dienst: Ein kleines Apps Script holt jede Minute neue E-Mails ab. In Produktion würde Gorgias denselben Webhook direkt aufrufen, ohne Verzögerung. Der Webhook bleibt gleich. |
 | **Wissen des Teams in einer Textdatei** | `rules/support-faq.md` enthält Standardantworten (Rechnung, Zertifikat, Versand, Rücksendung). Das sind **Beispiel-Richtlinien**. In Produktion wären das die Gorgias-Makros des Teams. Der Agent verspricht nichts, was das System nicht tut (kein PDF schicken, keine Rechnung ausstellen, nichts erstatten oder nachschicken). Er gibt den Link oder sagt, dass sich das Team meldet. |
 | **Strukturierte Antworten** | Jeder KI-Aufruf muss JSON nach Schema liefern (Function Calling + zod). Falsches Format = Fehler, keine kaputte Antwort an Kunden. |
-| **KI-Anbieter austauschbar** | Alle KI-Aufrufe laufen über eine Funktion (`lib/llm.ts`). OpenAI ist Standard. Claude, Gemini oder ein lokales Modell (Ollama) gehen auch – eine Zeile in `.env`. |
+| **KI-Anbieter austauschbar** | Alle KI-Aufrufe laufen über eine Funktion (`lib/llm.ts`). OpenAI ist Standard (`OPENAI_MODEL`, Denktiefe über `OPENAI_REASONING_EFFORT`). Claude, Gemini oder ein lokales Modell (Ollama) gehen auch – eine Zeile in `.env`. |
 | **Schutz für die öffentliche Demo** | Token im Webhook-Link (Vergleich in konstanter Zeit), höchstens 60 Tickets pro Tag und 5 pro Absender und Stunde, Text wird nach 2.000 Zeichen abgeschnitten. Die KI läuft nur, wenn `ENABLE_LIVE=true` gesetzt ist. |
 
 ## Was die Demo zeigt
 
 - **Live:** Ihre E-Mail oder Ihre Nachricht aus dem Textfeld, mit Zeitleiste (Spinner, solange ein Schritt läuft).
-  Neue Tickets stehen oben und leuchten kurz auf.
+  Neue Tickets stehen oben. Ein kurzer Hinweis oben zeigt neue E-Mails an. Wer gerade nichts anklickt, sieht das
+  neue Ticket automatisch.
 - **Beispiele:** 13 Beispiel-Tickets, darunter ein Versuch, den Agenten zu manipulieren (T-1013). Zu jedem
   Ticket gibt es das gespeicherte Ergebnis eines echten Durchlaufs.
 - **Wortliste live testen:** Ebene 1 des Compliance-Checks, ohne KI, sofort und kostenlos.
@@ -88,8 +102,11 @@ Das Textfeld auf der Seite (`/api/submit`) nutzt **dieselbe** Funktion wie der W
 
 - **Ca. 1 Minute Verzögerung.** Das Gmail-Script läuft nur einmal pro Minute. Mit Gorgias wäre es sofort.
 - **Google Sheets ist langsam und begrenzt.** Jeder Schritt ist ein eigener Aufruf an das Apps Script
-  (oft eine Sekunde oder mehr), und Google begrenzt die Zahl der Aufrufe. Für eine Demo reicht das, für viele
-  Tickets gleichzeitig nicht.
+  (oft ca. 2 Sekunden), und Google begrenzt die Zahl der Aufrufe. Die KI wartet nicht auf diese Aufrufe, aber ein
+  Ticket ist im Sheet erst ein paar Sekunden nach der KI fertig. Für eine Demo reicht das, für viele Tickets
+  gleichzeitig nicht.
+- **Support-FAQ ist ein Beispiel.** `rules/support-faq.md` enthält ausgedachte Standardantworten, keine echten
+  Richtlinien von maorika oder nedura.
 - **Bestelldaten sind erfunden.** Bestellungen, Chargen und Produkte kommen aus JSON-Dateien in `data/`. In Produktion
   würde `lib/data.ts` die **Shopify Admin API**, die **Amazon SP-API** und das **ERP** abfragen. Der Rest des Agenten
   bleibt gleich.
@@ -126,7 +143,7 @@ Die Einrichtung von Google Sheet, Gmail und Vercel steht Schritt für Schritt in
 ## Projektstruktur
 
 ```
-app/page.tsx                  Demo-Seite (Live, Beispiele, Wortliste)
+app/page.tsx                  Demo-Seite (Live, Beispiele, Wortliste; öffnet neue E-Mails automatisch)
 app/api/inbound-email/        Webhook für E-Mails (Token, Filter, Limits, after())
 app/api/submit/               Textfeld auf der Seite – derselbe Ablauf wie der Webhook
 app/api/inbox/                Daten für die Seite (Live-Tickets, Beispiele, Einstellungen)
@@ -147,7 +164,7 @@ apps-script/GmailForwarder.gs Apps Script im Demo-Gmail-Konto: schickt neue E-Ma
 rules/                        Compliance-Regeln + Support-FAQ (Beispiel-Richtlinien; in Produktion: die Gorgias-Makros des Teams)
 data/                         Beispieldaten (erfunden) + gespeicherte Ergebnisse der Beispiele
 scripts/                      CLI und Test-Skript für den Webhook
-tests/                        Tests: Wortliste, Routing, E-Mail-JSON, Filter, Limits, Store, Webhook, Prompt-Injection
+tests/                        Tests: Wortliste, Routing, E-Mail-JSON, Filter, Limits, Store, Webhook, Prompt-Injection, FAQ
 docs/SETUP-EN.md              Einrichtung Schritt für Schritt (Englisch)
 ```
 
@@ -158,4 +175,5 @@ Werkzeuge selbst (z. B. „Bestellung suchen“, „Zertifikat holen“, „Send
 ein Ticket braucht. Die Compliance-Prüfung und die Regel „senden oder Mensch“ bleiben fester Code am Ende.
 
 ---
-Gebaut von Mahira Ahmad mit Claude Code. Die gespeicherten Beispiel-Ergebnisse wurden mit [MODELL EINTRAGEN] erzeugt. · [GitHub](https://github.com/mahira13)
+Gebaut von Mahira Ahmad mit Claude Code. Die gespeicherten Beispiel-Ergebnisse wurden mit openai · gpt-5-mini
+erzeugt. · [GitHub](https://github.com/mahira13/support-agent-automation)

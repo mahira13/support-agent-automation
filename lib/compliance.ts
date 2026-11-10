@@ -10,6 +10,8 @@ import { ComplianceSchema, type ComplianceResult, type Draft, type StepMeta, typ
 export async function checkCompliance(
   ticket: Ticket,
   draft: Draft,
+  /** Name from the order data (code, not AI), so the review doesn't flag it as invented. */
+  customerName?: string,
 ): Promise<{ result: ComplianceResult; meta: StepMeta }> {
   const rule_hits_draft = checkRules(draft.reply_de);
 
@@ -34,11 +36,14 @@ ${loadRulesMarkdown()}`,
 ${ticket.body}
 <<<ENDE_KUNDENTEXT>>>
 
+KUNDENNAME AUS DEN BESTELLDATEN (aus dem System, nicht erfunden): ${customerName || "nicht bekannt"}
+
 ANTWORTENTWURF:
 ${draft.reply_de}
 
-TREFFER DER AUTOMATISCHEN WORTLISTE (diese Stellen müssen auf jeden Fall raus):
-${rule_hits_draft.length ? JSON.stringify(rule_hits_draft, null, 2) : "keine"}`,
+${rule_hits_draft.length
+  ? `TREFFER DER AUTOMATISCHEN WORTLISTE (diese Stellen müssen auf jeden Fall raus):\n${JSON.stringify(rule_hits_draft, null, 2)}`
+  : "AUTOMATISCHE WORTLISTE: kein Treffer."}`,
     toolName: "save_review",
     toolDescription: "Speichert das Ergebnis der Compliance-Prüfung.",
     inputSchema: {

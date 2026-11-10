@@ -5,7 +5,7 @@
 // Setup:
 // 1. Logged in as the demo Gmail account: script.google.com → New project → paste this.
 // 2. Project Settings → Script properties → WEBHOOK_URL =
-//    https://YOUR-APP.vercel.app/api/inbound-email?token=YOUR_INBOUND_WEBHOOK_TOKEN
+//    https://support-agent-automation.vercel.app/api/inbound-email?token=YOUR_INBOUND_WEBHOOK_TOKEN
 // 3. Run forwardNewEmails once by hand and allow the permissions.
 // 4. Triggers → Add Trigger → forwardNewEmails → Time-driven → Minutes timer → Every minute.
 

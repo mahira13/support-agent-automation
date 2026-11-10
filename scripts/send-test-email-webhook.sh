@@ -5,7 +5,7 @@
 #
 # Usage:
 #   ./scripts/send-test-email-webhook.sh http://localhost:3000 your-webhook-token
-#   ./scripts/send-test-email-webhook.sh https://DEINE-APP.vercel.app your-webhook-token
+#   ./scripts/send-test-email-webhook.sh https://support-agent-automation.vercel.app your-webhook-token
 set -euo pipefail
 BASE_URL="${1:?Bitte die Basis-URL angeben, z. B. http://localhost:3000}"
 TOKEN="${2:?Bitte das INBOUND_WEBHOOK_TOKEN angeben}"

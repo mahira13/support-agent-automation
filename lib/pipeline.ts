@@ -109,7 +109,7 @@ export async function runAgent(ticket: Ticket, onStep?: OnStep): Promise<AgentRe
     await emit(onStep, "draft", "done", "Entwurf fertig", draft.data);
 
     await emit(onStep, "compliance", "running", "Compliance-Prüfung läuft …");
-    const compliance = await checkCompliance(ticket, draft.data);
+    const compliance = await checkCompliance(ticket, draft.data, context.order?.customer_name);
     steps.compliance = compliance.meta;
     await emit(onStep, "compliance", "done", complianceLabel(compliance.result), compliance.result);
 

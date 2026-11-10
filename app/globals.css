@@ -93,6 +93,14 @@ header.top h1 { margin: 0; font-size: 24px; letter-spacing: -0.01em; }
 .status.needs_review { background: var(--yellow-soft); }
 .status.blocked { background: var(--red-soft); }
 .status .icon { font-size: 22px; line-height: 1; }
+.status.processing { background: var(--honey-soft); align-items: center; }
+.step-running { margin: 0; font-size: 14px; display: flex; align-items: center; }
+
+.toast { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 10; width: max-content; max-width: calc(100% - 32px); display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); cursor: pointer; font-size: 14px; text-align: left; animation: toast-in 0.25s ease-out; }
+.toast .spinner { color: var(--honey); margin-right: 0; }
+.toast .spinner { flex: none; }
+.toast-open { color: var(--honey); font-weight: 600; white-space: nowrap; }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
 .steps { display: grid; gap: 12px; margin-top: 12px; }
 
